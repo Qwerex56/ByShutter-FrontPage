@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Rouge+Script&display=swap');
+
+@import 'tailwindcss';
+
+@theme {
+  --color-bone: rgb(231, 219, 204);
+  --color-olive-wood: rgb(126, 101, 81);
+  --color-white-smoke: rgb(245, 245, 245);
+  --color-jet-black: rgb(35, 46, 42);
+
+  --animate-shuffle: shuffle 1s ease-in-out;
+
+  --font-rouge-script: "Rouge Script", cursive;
+  --font-inter: "Inter", sans-serif;
+  --font-playfair-display: "Playfair Display", serif;
+
+  @keyframes shuffle {
+    5% {
+      transform: translateX(-50px);
+    }
+
+    100% {
+      z-index: -1;
+    }
+  }
+}
