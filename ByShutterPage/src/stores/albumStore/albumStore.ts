@@ -3,6 +3,7 @@ import type { CreateAlbumRequestDto } from '@/api/dto/album/createAlbumRequestDt
 import type { UpdateAlbumRequestDto } from '@/api/dto/album/updateAlbumRequestDto'
 import {
   createAlbum,
+  deleteAlbum,
   getAlbum,
   getAlbumHeader,
   getAlbums,
@@ -67,6 +68,16 @@ export const useAlbumStore = defineStore('albumStore', () => {
     }
   }
 
+  async function deleteAlbumById(id: string) {
+    const response = await deleteAlbum(id)
+
+    if (response.status !== 204) {
+      throw new Error(`Could not delete album: ${response.statusText}`)
+    }
+
+    albums.value = albums.value.filter((album) => album.id !== id)
+  }
+
   async function updateAlbumData(dto: UpdateAlbumRequestDto) {
     const response = await updateAlbum(dto)
   }
@@ -81,5 +92,6 @@ export const useAlbumStore = defineStore('albumStore', () => {
     getAlbumsPage,
     loadAlbum,
     loadAlbums,
+    deleteAlbumById,
   }
 })

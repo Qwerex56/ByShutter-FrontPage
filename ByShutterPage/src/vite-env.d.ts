@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string
   readonly VITE_IMAGE_SOURCE_ORIGIN: string
   readonly VITE_BACKEND_ORIGIN: string
+  readonly VITE_HOME_PROFILE_ID: string
 }
 
 interface ImportMeta {

@@ -24,3 +24,11 @@
     }
   }
 }
+
+.admin-input {
+  @apply mt-2 block w-full border-b-2 border-jet-black/40 bg-transparent px-0 py-2 font-inter text-base font-normal outline-none transition-colors focus:border-olive-wood;
+}
+
+.admin-button {
+  @apply px-4 py-2 font-playfair-display text-sm font-bold uppercase underline decoration-1 underline-offset-4 transition-transform duration-200 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50;
+}

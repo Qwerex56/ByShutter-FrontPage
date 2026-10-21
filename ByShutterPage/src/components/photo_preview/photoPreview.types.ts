@@ -1,14 +1,15 @@
 export interface PhotoPreviewModel {
-    id: string,
-    name: string,
-    displayName?: string | null,
-    description?: string | null,
-    source: string,
-    imageAlt: string
-};
+  id: string
+  name: string
+  displayName?: string | null
+  description?: string | null
+  source: string
+  imageAlt: string
+  isSelcted?: boolean
+}
 
 export interface PhotoPreviewEvents {
-    (e: 'openBigPicture') : void,
-    (e: 'edit', id: string) : void,
-    (e: 'delete', id: string) : void
+  (e: 'select', id: string): void
+  (e: 'edit', id: string): void
+  (e: 'delete', id: string): void
 }

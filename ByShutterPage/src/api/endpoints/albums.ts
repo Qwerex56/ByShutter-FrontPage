@@ -5,6 +5,7 @@ import type { AlbumHeaderDto } from '../dto/album/albumHeaderDto'
 import type { AlbumMetadataDto } from '../dto/album/albumMetadataDto'
 import type { CreateAlbumRequestDto } from '../dto/album/createAlbumRequestDto'
 import type { UpdateAlbumRequestDto } from '../dto/album/updateAlbumRequestDto'
+import type { RemoveImagesFromAlbumRequestDto } from '../dto/album/removeImagesFromAlbumRequestDto'
 import type { PortfolioPhotoDto } from '../dto/photo/portfolioPhotoDto'
 
 export async function getAlbum(albumId: string) {
@@ -51,13 +52,26 @@ export async function createAlbum(data: CreateAlbumRequestDto) {
   return response
 }
 
+export async function deleteAlbum(albumId: string) {
+  const response = await api.delete(`albums/${albumId}`)
+
+  return response
+}
+
 export async function addImagesToAlbum(albumId: string, data: AddImagesToAlbumRequestDto) {
   const response = await api.put(`albums/${albumId}/add-images`, data)
 
   return response
 }
 
-export async function removeImagesFromAlbum(albumId: string, data: RemoveImagesFromAlbumDto) {}
+export async function removeImagesFromAlbum(
+  albumId: string,
+  data: RemoveImagesFromAlbumRequestDto,
+) {
+  const response = await api.delete(`albums/${albumId}/images`, { data })
+
+  return response
+}
 
 export async function updateAlbum(data: UpdateAlbumRequestDto) {
   const response = await api.patch(`albums/${data.id}`)

@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@types/node": "^25.9.3"
+  },
+  "dependencies": {
+    "@vueuse/core": "^14.3.0"
+  }
+}
