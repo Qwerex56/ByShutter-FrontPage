@@ -1,0 +1,31 @@
+using ByShutterBackend.Domain.Common.Interfaces;
+using MediatR;
+
+namespace ByShutterBackend.Application.Portfolio.Commands.Photos;
+
+public class DeleteImageCommandHandler : IRequestHandler<DeleteImageCommand>
+{
+    private readonly IPhotoRepository _photoRepository;
+    private readonly IFileStorage _fileStorage;
+
+    public DeleteImageCommandHandler(IPhotoRepository photoRepository, IFileStorage fileStorage)
+    {
+        _photoRepository = photoRepository;
+        _fileStorage = fileStorage;
+    }
+
+    public async Task Handle(DeleteImageCommand request, CancellationToken cancellationToken)
+    {
+        var image = await _photoRepository.GetPhotoAsync(request.ImageId, cancellationToken);
+
+        if (image is null)
+        {
+            return;
+        }
+    
+        await _photoRepository.DeletePhotoAsync(image, cancellationToken);
+
+        // Bez tego "usuniete" zdjecie dalej byloby publicznie dostepne pod /media/<nazwa>.
+        await _fileStorage.DeleteFileAsync(image.FileName, image.ServerPath);
+    }
+}
