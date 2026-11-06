@@ -1,0 +1,83 @@
+# Caddy w produkcji: jedna domena, TLS konczy sie na Cloudflare (tunel -> http://caddy:80).
+#   /api/*   -> backend ASP.NET
+#   /media/* -> zdjecia z wolumenu (tylko odczyt, tylko GET/HEAD, tylko obrazy)
+#   reszta   -> zbudowany frontend (SPA, fallback na index.html)
+{
+	auto_https off
+	admin off
+
+	servers {
+		# cloudflared siedzi w sieci dockera -> ufamy mu w kwestii IP klienta
+		trusted_proxies static private_ranges
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+	}
+}
+
+:80 {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+
+	# ---------- API ----------
+	handle /api/* {
+		request_body {
+			max_size 60MB
+		}
+		header Cache-Control "no-store"
+		reverse_proxy backend:8080 {
+			# Ruch przychodzi wylacznie przez tunel Cloudflare (HTTPS u klienta)
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	# ---------- Zdjecia (serwer plikow) ----------
+	handle_path /media/* {
+		root * /srv/media
+
+		# Tylko pliki graficzne; ukryte pliki (.DS_Store, .env...) i reszta -> 404
+		@notImage {
+			not path *.jpg *.jpeg *.png *.webp *.gif *.avif *.heic
+		}
+		@hidden path */.*
+		respond @notImage 404
+		respond @hidden 404
+
+		header {
+			Cache-Control "public, max-age=2592000"
+			# Nawet gdyby ktos wgral cos innego niz obraz, przegladarka tego nie wykona
+			Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox"
+			Cross-Origin-Resource-Policy "same-origin"
+		}
+
+		# file_server: brak listowania katalogow (browse wylaczone), inne metody niz GET/HEAD -> 405
+		file_server
+	}
+
+	# ---------- Frontend (Vue SPA) ----------
+	handle {
+		root * /srv/www
+
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@notAssets not path /assets/*
+		header @notAssets Cache-Control "no-cache"
+
+		header Content-Security-Policy "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+		try_files {path} /index.html
+		file_server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

@@ -1,0 +1,94 @@
+# Produkcja: frontend + Caddy + backend + Postgres, wystawione przez Cloudflare Tunnel.
+# Zaden kontener nie publikuje portow na hoscie - jedyne wejscie to tunel.
+#
+#   cp .env.example .env   # uzupelnij
+#   docker compose up -d --build
+
+name: byshutter
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: byshutter
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ustaw POSTGRES_PASSWORD w .env}
+      POSTGRES_DB: byshutter
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [db]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U byshutter -d byshutter"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+
+  backend:
+    build:
+      context: ./ByShutterBackend
+      dockerfile: ByShutterBackend.Web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      AllowedHosts: ${DOMAIN:?ustaw DOMAIN w .env}
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=byshutter;Username=byshutter;Password=${POSTGRES_PASSWORD}"
+      ImageStoragePathOptions__Directory: /app/uploads
+      DataProtection__KeysDirectory: /app/keys
+      Authentication__InitialUsername: ${ADMIN_USERNAME:?ustaw ADMIN_USERNAME w .env}
+      Authentication__InitialPassword: ${ADMIN_PASSWORD:?ustaw ADMIN_PASSWORD w .env}
+      FrontendOrigin: ""
+    volumes:
+      - media:/app/uploads
+      - dpkeys:/app/keys
+    networks: [db, web]
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+  caddy:
+    build:
+      context: ./ByShutterPage
+      args:
+        VITE_HOME_PROFILE_ID: ${HOME_PROFILE_ID:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - media:/srv/media:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [web]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?ustaw CLOUDFLARE_TUNNEL_TOKEN w .env}
+    depends_on:
+      - caddy
+    networks: [web]
+    security_opt: ["no-new-privileges:true"]
+
+networks:
+  # Baza bez dostepu do internetu i niewidoczna dla Caddy/cloudflared
+  db:
+    internal: true
+  web:
+
+volumes:
+  pgdata:
+  media:
+  dpkeys:
+  caddy_data:
+  caddy_config:

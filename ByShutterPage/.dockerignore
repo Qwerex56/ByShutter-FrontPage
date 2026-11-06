@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+cypress
+.env
+.env.*
+.DS_Store
+.vscode
+.idea
